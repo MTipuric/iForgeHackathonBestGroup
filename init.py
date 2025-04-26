@@ -36,10 +36,11 @@ code = response.text.split("``` C++\n")[1].split("\n```")[0]
 
 with open("build/code.cpp", "w") as f:
     f.write(code)
-    
-sketch_path = "./iForgeHackathonBestGroup.ino"  # Change this to your .ino file
+
+sketch_path = "build/iForgeHackathonBestGroup.ino"  # Change this to your .ino file
 port = "COM3"  # Change this if your Arduino is on a different port
 fqbn = "arduino:avr:mega"  # Replace with the correct FQBN for your board
+
 compile_command = [
     'arduino-cli',
     'compile',
@@ -74,15 +75,3 @@ except subprocess.CalledProcessError as e:
     print("Standard Output:", e.stdout)
     print("Standard Error:", e.stderr)
 
-# prompt the console to compile and upload the code to the Arduino board. press Y to proceed, N to cancel
-confirm = input("Do you conform to compile and upload the code to the Arduino board? (Y/N) ")
-if confirm == "Y":
-    # compile and upload the code to the Arduino board in this process
-    compile_process = subprocess.run(["arduino-cli", "compile", "--board", "arduino:avr:uno", "--port", "/dev/ttyACM0", "--verbose", "build/code.ino"])
-    if compile_process.returncode == 0:
-        upload_process = subprocess.run(
-            ["arduino-cli", "upload", "--board", "arduino:avr:uno", "--port", "/dev/ttyACM0", "--verbose", "build/code.ino"])
-    else:
-        print("Compile failed")
-else:
-    print("Cancelled")
