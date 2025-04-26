@@ -1,12 +1,11 @@
 import os
+import re
 import subprocess
 
 from google import genai
 from google.genai import types
 import subprocess
 import sys
-
-import subprocess
 
 # access GEMINI_API_KEY from environment variables
 geminiKey = os.environ.get('GEMINI_API_KEY')
@@ -18,37 +17,26 @@ response = client.models.generate_content(
     config=types.GenerateContentConfig(
         system_instruction="""You need to generate Arduino code that is ready to compile for the given instruction. ONLY GENERATE CODE.
         Some pin definition are given in the following code:
-        X_STEP_PIN         54
-        X_DIR_PIN          55
-        X_ENABLE_PIN       38
+        ``` C++
+        #define X_STEP_PIN         54
+        #define X_DIR_PIN          55
+        #define X_ENABLE_PIN       38
+        ```
         Please generate a code for the following task: 
         """),
     contents="Rotate the motor 360 degrees",
 )
+
 # strip C++ code from response
-def extract_code_from_response(response):
-    code_blocks = []
-    in_code_block = False
-    current_code = ""
-    for line in response.text.splitlines():
-        if line.startswith("```"):
-            if in_code_block:
-                code_blocks.append(current_code.strip())
-                current_code = ""
-                in_code_block = False
-            else:
-                in_code_block = True
-        elif in_code_block:
-            current_code += line + "\n"
-    return code_blocks
+code_start = r"```(.*?)\n"
+parts = re.split(code_start, response.text)
+code_blocks = parts[-1].split("\n```")[0]
 
 # Example usage (assuming 'response' is your Gemini API response object)
-code_blocks = extract_code_from_response(response)  # Changed 'code' to 'code_blocks'
 if code_blocks:  # Check if the list is not empty
-    code = code_blocks[0]  # Get the first code block
     print("Writing first code block to .ino")
     with open("build/iForgeHackathonBestGroup.ino", "w") as f:
-        f.write(code)
+        f.write(code_blocks)
 else:
     print("No code blocks found in the response.")
     # Handle the case where no code is found, e.g., write an empty file or raise an error
