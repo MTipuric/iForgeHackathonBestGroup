@@ -11,6 +11,7 @@ import ikpy
 from ikpy.chain import Chain
 from ikpy.link import OriginLink, URDFLink
 import numpy as np
+import time
 
 """
 Inverse Kinematics
@@ -57,9 +58,6 @@ def inverse_kinematics(start_degs, target_dist):
 
     # Define the target end-effector position (20 cm forward in X)
     # target_position = [0.2, 0, 0]
-    # print(f"Target end-effector position (x, y, z): {target_position}")
-
-    # Calculate the inverse kinematics to find the target joint angles
     target_joint_angles_radians = left_arm_chain.inverse_kinematics(target_dist)
     target_joint_angles_degrees = np.rad2deg(target_joint_angles_radians)
 
@@ -178,16 +176,17 @@ def coordiate_generation(instruct):
 
 def main():
 
-    while(True):
-        # prompt to input the instruction
-        instruction = input("Enter the instruction: ")
-        # Here we call Gemini to give target coordinates
-        coor = coordiate_generation(instruction)
+    instruction = input("Enter the instruction: ")
+    coor = coordiate_generation(instruction)
+    start = [0,0,45,45,0]
 
-        inverse_kinematics()
-        # reset the motor arms
+    for i in range(len(coor)):
+        print(coor[i])
+        target_angle = inverse_kinematics(start, coor[i])
+        generate_and_run(target_angle)
+        start = target_angle 
 
-        generate_and_run(instruction)
+        time.sleep(10)
 
 if __name__ == '__main__':
     main()
