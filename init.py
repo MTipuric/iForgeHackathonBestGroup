@@ -1,3 +1,4 @@
+import ast
 import os
 import re
 import subprocess
@@ -14,58 +15,57 @@ import numpy as np
 """
 Inverse Kinematics
 """
-left_arm_chain = Chain(name='robot_arm', links=[
-    OriginLink(),
-    URDFLink(
-      name="BaseRotate",
-      origin_translation=[0, 0, 0],
-      origin_orientation=[0, 1.57, 0],
-      rotation=[0, 0, 1],
-    ),
-    URDFLink(
-      name="Shoulder_hinge",
-      origin_translation=[0, 0, 0.4],
-      origin_orientation=[0, 0, 0],
-      rotation=[0, 1, 0],
-    ),
-    URDFLink(
-      name="Elbow",
-      origin_translation=[0, 0, 0.4],
-      origin_orientation=[0, 0, 0],
-      rotation=[0, 1, 0],
-    ),
-    URDFLink(
-      name="End",
-      origin_translation=[0, 0, 0],
-      origin_orientation=[0, 0, 0],
-      rotation=[0, 0, 0],
-    )
-])
+def inverse_kinematics(start_degs, target_dist):
+    left_arm_chain = Chain(name='robot_arm', links=[
+        OriginLink(),
+        URDFLink(
+          name="BaseRotate",
+          origin_translation=[0, 0, 0],
+          origin_orientation=[0, 1.57, 0],
+          rotation=[0, 0, 1],
+        ),
+        URDFLink(
+          name="Shoulder_hinge",
+          origin_translation=[0, 0, 0.4],
+          origin_orientation=[0, 0, 0],
+          rotation=[0, 1, 0],
+        ),
+        URDFLink(
+          name="Elbow",
+          origin_translation=[0, 0, 0.4],
+          origin_orientation=[0, 0, 0],
+          rotation=[0, 1, 0],
+        ),
+        URDFLink(
+          name="End",
+          origin_translation=[0, 0, 0],
+          origin_orientation=[0, 0, 0],
+          rotation=[0, 0, 0],
+        )
+    ])
+    # initial_angles_degrees = [0, 0, 45, 45, 0]
 
-# Initial joint angles (in degrees)
-initial_angles_degrees = [0, 0, 45, 45, 0]
+    # Convert to radians
+    initial_angles_radians = np.deg2rad(start_degs)
 
-# Convert to radians
-initial_angles_radians = np.deg2rad(initial_angles_degrees)
+    # Get the initial forward kinematics
+    initial_fk = left_arm_chain.forward_kinematics(initial_angles_radians)
 
-# Get the initial forward kinematics
-initial_fk = left_arm_chain.forward_kinematics(initial_angles_radians)
+    # Extract the initial end-effector position
+    initial_end_effector_position = initial_fk[:3, 3]
+    print(f"Initial end-effector position (x, y, z): {initial_end_effector_position}")
 
-# Extract the initial end-effector position
-initial_end_effector_position = initial_fk[:3, 3]
-print(f"Initial end-effector position (x, y, z): {initial_end_effector_position}")
+    # Define the target end-effector position (20 cm forward in X)
+    # target_position = [0.2, 0, 0]
+    # print(f"Target end-effector position (x, y, z): {target_position}")
 
-# Define the target end-effector position (20 cm forward in X)
-target_position = [0.2, 0, 0]
-print(f"Target end-effector position (x, y, z): {target_position}")
+    # Calculate the inverse kinematics to find the target joint angles
+    target_joint_angles_radians = left_arm_chain.inverse_kinematics(target_dist)
+    target_joint_angles_degrees = np.rad2deg(target_joint_angles_radians)
 
-# Calculate the inverse kinematics to find the target joint angles
-target_joint_angles_radians = left_arm_chain.inverse_kinematics(target_position)
-target_joint_angles_degrees = np.rad2deg(target_joint_angles_radians)
+    print(f"Target joint angles (degrees): {target_joint_angles_degrees}")
+    return target_joint_angles_degrees
 
-print(f"Target joint angles (degrees): {target_joint_angles_degrees}")
-
-sys.exit()
 
 """
 Gemini calls
@@ -154,11 +154,37 @@ def generate_and_run(target_degrees):
         print("Standard Output:", e.stdout)
         print("Standard Error:", e.stderr)
 
+def coordiate_generation(instruct):
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        config=types.GenerateContentConfig(
+            system_instruction="""I'm generating some coordinates in 3d space. 
+            I'm using the following format: [x, y, z].
+            please generate a series of 3d coordinates in Python lists forming the shape you are instructed to. 
+            only printout the list.
+                """),
+        contents=instruct,
+    )
+
+    # strip C++ code from response
+    code_start = r"```(.*?)\n"
+    parts = re.split(code_start, response.text)
+    code_blocks = parts[-1].split("```")[0]
+
+    # parse list in the string to a list
+    coord = ast.literal_eval(code_blocks)
+
+    return coord
+
 def main():
+
     while(True):
         # prompt to input the instruction
         instruction = input("Enter the instruction: ")
+        # Here we call Gemini to give target coordinates
+        coor = coordiate_generation(instruction)
 
+        inverse_kinematics()
         # reset the motor arms
 
         generate_and_run(instruction)
