@@ -30,13 +30,13 @@ response = client.models.generate_content(
 # strip C++ code from response
 code_start = r"```(.*?)\n"
 parts = re.split(code_start, response.text)
-code_blocks = parts[-1].split("\n```")[0]
+code_blocks = parts[-1].split("```")[0]
 
 # Example usage (assuming 'response' is your Gemini API response object)
 if code_blocks:  # Check if the list is not empty
     print("Writing first code block to .ino")
     with open("build/build.ino", "w") as f:
-        f.write(code)
+        f.write(code_blocks)
 else:
     print("No code blocks found in the response.")
     # Handle the case where no code is found, e.g., write an empty file or raise an error
