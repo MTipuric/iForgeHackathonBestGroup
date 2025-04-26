@@ -76,7 +76,7 @@ geminiKey = os.environ.get('GEMINI_API_KEY')
 
 client = genai.Client(api_key=geminiKey)
 
-def generate_and_run (instruction):
+def generate_and_run(target_degrees):
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
@@ -86,12 +86,20 @@ def generate_and_run (instruction):
             #define X_STEP_PIN         54
             #define X_DIR_PIN          55
             #define X_ENABLE_PIN       38
+            #define Y_STEP_PIN         60
+            #define Y_DIR_PIN          61
+            #define Y_ENABLE_PIN       56
+
+            #define Z_STEP_PIN         46
+            #define Z_DIR_PIN          48
+            #define Z_ENABLE_PIN       62
             ```
             Please generate a code for the following task: 
             """),
-        contents=f"Rotate the motor {target_joint_angles_degrees[2]}, and then FULL STOP",
-    )
-
+    contents=f"Rotate the X motor {target_degrees[1]}, and then FULL STOP. \
+            Rotate the Y motor {target_degrees[2]}, and then FULL STOP. \
+            Rotate the Z motor {target_degrees[3]}, and then FULL STOP"
+)
     # strip C++ code from response
     code_start = r"```(.*?)\n"
     parts = re.split(code_start, response.text)
