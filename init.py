@@ -16,26 +16,44 @@ client = genai.Client(api_key=geminiKey)
 response = client.models.generate_content(
     model="gemini-2.0-flash",
     config=types.GenerateContentConfig(
-        system_instruction="""You are a program for generating Arduino codes to operate step motors connected to the board. 
-        You are given a task description and a list of requirements. 
-        You need to generate Arduino C++ code that complete one instruction at a time.
-        You need to generate Arduino C++ code that complete one instruction at a time.
+        system_instruction="""You need to generate Arduino code that is ready to compile for the given instruction. ONLY GENERATE CODE.
         Some pin definition are given in the following code:
-        ``` C++
-        #define X_STEP_PIN         54
-        #define X_DIR_PIN          55
-        #define X_ENABLE_PIN       38
-        ```
+        X_STEP_PIN         54
+        X_DIR_PIN          55
+        X_ENABLE_PIN       38
         Please generate a code for the following task: 
         """),
     contents="Rotate the motor 360 degrees",
 )
-
 # strip C++ code from response
-code = response.text.split("``` C++\n")[1].split("\n```")[0]
+def extract_code_from_response(response):
+    code_blocks = []
+    in_code_block = False
+    current_code = ""
+    for line in response.text.splitlines():
+        if line.startswith("```"):
+            if in_code_block:
+                code_blocks.append(current_code.strip())
+                current_code = ""
+                in_code_block = False
+            else:
+                in_code_block = True
+        elif in_code_block:
+            current_code += line + "\n"
+    return code_blocks
 
-with open("build/code.cpp", "w") as f:
-    f.write(code)
+# Example usage (assuming 'response' is your Gemini API response object)
+code_blocks = extract_code_from_response(response)  # Changed 'code' to 'code_blocks'
+if code_blocks:  # Check if the list is not empty
+    code = code_blocks[0]  # Get the first code block
+    print("Writing first code block to .ino")
+    with open("build/iForgeHackathonBestGroup.ino", "w") as f:
+        f.write(code)
+else:
+    print("No code blocks found in the response.")
+    # Handle the case where no code is found, e.g., write an empty file or raise an error
+    with open("build/iForgeHackathonBestGroup.ino", "w") as f:
+        f.write("") # Write an empty string
 
 sketch_path = "build/iForgeHackathonBestGroup.ino"  # Change this to your .ino file
 port = "COM3"  # Change this if your Arduino is on a different port
