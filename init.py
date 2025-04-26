@@ -23,7 +23,7 @@ response = client.models.generate_content(
         X_ENABLE_PIN       38
         Please generate a code for the following task: 
         """),
-    contents="Rotate the motor 360 degrees",
+    contents="Rotate the motor 360 degrees, and then FULL STOP",
 )
 # strip C++ code from response
 def extract_code_from_response(response):
@@ -47,15 +47,15 @@ code_blocks = extract_code_from_response(response)  # Changed 'code' to 'code_bl
 if code_blocks:  # Check if the list is not empty
     code = code_blocks[0]  # Get the first code block
     print("Writing first code block to .ino")
-    with open("build/iForgeHackathonBestGroup.ino", "w") as f:
+    with open("build/build.ino", "w") as f:
         f.write(code)
 else:
     print("No code blocks found in the response.")
     # Handle the case where no code is found, e.g., write an empty file or raise an error
-    with open("build/iForgeHackathonBestGroup.ino", "w") as f:
+    with open("build/build.ino", "w") as f:
         f.write("") # Write an empty string
 
-sketch_path = "build/iForgeHackathonBestGroup.ino"  # Change this to your .ino file
+sketch_path = "build/build.ino"  # Change this to your .ino file
 port = "COM3"  # Change this if your Arduino is on a different port
 fqbn = "arduino:avr:mega"  # Replace with the correct FQBN for your board
 
