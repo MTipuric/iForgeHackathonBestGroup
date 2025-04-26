@@ -29,6 +29,8 @@ response = client.models.generate_content(
 # strip C++ code from response
 code = response.text.split("``` C++\n")[1].split("\n```")[0]
 
+with open("build/code.cpp", "w") as f:
+    f.write(code)
 print(code)
 
 # prompt the console to compile and upload the code to the Arduino board. press Y to proceed, N to cancel
