@@ -146,3 +146,14 @@ def generate_and_run (instruction):
         print("Standard Output:", e.stdout)
         print("Standard Error:", e.stderr)
 
+def main():
+    while(True):
+        # prompt to input the instruction
+        instruction = input("Enter the instruction: ")
+
+        # reset the motor arms
+
+        generate_and_run(instruction)
+
+if __name__ == '__main__':
+    main()
